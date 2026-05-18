@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+
+    environment:
+      POSTGRES_DB: foodsave_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  web:
+    build: .
+    container_name: foodsave_web
+
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      gunicorn config.wsgi:application --bind 0.0.0.0:8000
+      "
+
+    volumes:
+      - .:/app
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      - db
+
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
