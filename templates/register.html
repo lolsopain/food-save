@@ -51,8 +51,8 @@ async function register() {
     }
 
     try {
-        // Django REST Framework orqali foydalanuvchi yaratish (Ushbu endpoint odatda POST qabul qiladi)
-        const response = await fetch("/api/users/", {
+        // To'g'ri va yakuniy backend API manzili funksiya ichiga qo'yildi
+        const response = await fetch("/api/users/register/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -68,10 +68,16 @@ async function register() {
 
         if (response.ok || response.status === 201) {
             alert("Ro'yxatdan muvaffaqiyatli o'tdingiz! Endi login qilishingiz mumkin.");
-            window.location.href = "/login-page/"; // Login sahifasiga o'tkazish
+            window.location.href = "/login-page/"; 
         } else {
-            // Backend qaytargan xatoliklarni chiroyli ko'rsatish
-            errorEl.innerText = data.username || data.email || data.detail || "Ro'yxatdan o'tishda xatolik!";
+            // Obyekt ko'rinishidagi xatoliklarni matnga o'girib ko'rsatish
+            let errorMsg = "";
+            if (typeof data === 'object') {
+                errorMsg = data.username || data.email || data.password || data.detail || JSON.stringify(data);
+            } else {
+                errorMsg = "Ro'yxatdan o'tishda xatolik!";
+            }
+            errorEl.innerText = errorMsg;
         }
     } catch (err) {
         console.error(err);
