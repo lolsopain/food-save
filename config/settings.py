@@ -5,7 +5,6 @@ from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Render panelidan SECRET_KEY topilmasa, xato bermasligi uchun default qiymat qo'shildi
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-fallback-key-for-local-dev-12345')
 
 DEBUG = False
@@ -20,10 +19,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Uchinchi tomon kutubxonalari
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_spectacular',
 
+    # Loyihaning ichki ilovalari (Apps)
     'users',
     'restaurants',
     'foods',
@@ -34,7 +35,7 @@ AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Statik fayllarni serverda ko'rsatish uchun maxsus qo'shildi
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -91,10 +92,17 @@ SPECTACULAR_SETTINGS = {
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Whitenoise orqali statik fayllarni keshga olish sozlamasi
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# ==============================================================================
+# SUPABASE BULUTLI SAQLASH TIZIMI SOZLAMALARI
+# ==============================================================================
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+DEFAULT_FILE_STORAGE = 'django_storage_supabase.storage.SupabaseStorage'
+
+# Supabase kalitlari
+SUPABASE_URL = config('SUPABASE_URL', default='https://npvazxxcraaywvdupdoo.supabase.co')
+SUPABASE_KEY = config('SUPABASE_KEY', default='sb_publishable_0vlg4xbYiNQGW1G-CXBZUQ_t7y5cmQvVpB-vG')
+SUPABASE_BUCKET_NAME = 'foods'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
