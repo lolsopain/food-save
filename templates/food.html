@@ -9,9 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
-        body {
-            background: #f5f7fa;
-        }
+        body { background: #f5f7fa; }
         .food-card {
             border: none;
             border-radius: 16px;
@@ -19,28 +17,22 @@
             transition: 0.2s ease;
             overflow: hidden;
         }
-        .food-card:hover {
-            transform: translateY(-4px);
-        }
+        .food-card:hover { transform: translateY(-4px); }
         .food-img-top {
             width: 100%;
             height: 200px;
             object-fit: cover;
             background-color: #eaeaea;
         }
-        .navbar {
-            background: #198754;
-        }
-        .navbar-brand {
-            color: white !important;
-            font-weight: bold;
-        }
+        .navbar { background: #198754; }
+        .navbar-brand { color: white !important; font-weight: bold; }
+        
+        /* Modal ichidagi xarita o'lchami */
         #map {
             width: 100%;
-            height: 350px;
-            border-radius: 12px;
+            height: 300px;
+            border-radius: 8px;
             border: 1px solid #ddd;
-            z-index: 1;
         }
     </style>
 </head>
@@ -49,108 +41,112 @@
 <nav class="navbar navbar-expand-lg">
     <div class="container">
         <a class="navbar-brand" href="#">FoodSave</a>
-        <div class="ms-auto" id="auth-buttons">
-            </div>
+        <div class="ms-auto" id="auth-buttons"></div>
     </div>
 </nav>
 
 <div class="container mt-5">
-    
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card p-4 border-0 shadow-sm" style="border-radius: 16px;">
-                <h4 class="text-success fw-bold mb-2">📍 Yetkazib berish manzili</h4>
-                <p class="text-muted small mb-3">Buyurtma berishdan avval uyingiz yoki turgan joyingizni xaritadan belgilang:</p>
-                
-                <div class="mb-3">
-                    <input type="text" id="address-input" class="form-control bg-white" placeholder="Xaritadan joy tanlang..." readonly>
-                </div>
-                
-                <div id="map"></div>
-            </div>
-        </div>
-    </div>
-
     <div class="text-center mb-5">
         <h1 class="fw-bold text-success">Mavjud Ovqatlar</h1>
         <p class="text-muted">Qolgan ovqatlarni arzon narxda band qiling</p>
     </div>
 
-    <div id="foods-container" class="row g-4">
+    <div id="foods-container" class="row g-4 mb-5">
         <div class="text-center">
             <p>Yuklanmoqda...</p>
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-success" id="orderModalLabel">📍 Yetkazib berish manzili</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Buyurtmani yakunlash uchun uyingiz koordinatasini xaritada bosing:</p>
+                
+                <div class="mb-3">
+                    <input type="text" id="address-input" class="form-control bg-light" placeholder="Xaritadan joy tanlang..." readonly>
+                </div>
+                
+                <div id="map"></div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="button" class="btn btn-success btn-sm fw-bold" onclick="confirmOrder()">Buyurtmani tasdiqlash</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+let map, marker;
+let selectedFoodId = null;
+let bootstrapModalInstance = null;
+
 document.addEventListener("DOMContentLoaded", function () {
     checkAuth();
-    initMap();
     loadFoods();
+    
+    // Modal oyna to'liq ochilgandan keyin xaritani yuklash (aks holda Leaflet xaritasi qotib qoladi)
+    const orderModalEl = document.getElementById('orderModal');
+    bootstrapModalInstance = new bootstrap.Modal(orderModalEl);
+    
+    orderModalEl.addEventListener('shown.bs.modal', function () {
+        initMap();
+    });
 });
 
-// 📌 TIZIMGA KIRGANLIKNI TEKSHIRISH VA NAVIGATSIYANI YANGILASH
 function checkAuth() {
     const token = localStorage.getItem("token");
     const authContainer = document.getElementById("auth-buttons");
-    
     if (token) {
-        authContainer.innerHTML = `
-            <button class="btn btn-outline-light btn-sm fw-bold" onclick="logout()">Chiqish (Logout)</button>
-        `;
+        authContainer.innerHTML = `<button class="btn btn-outline-light btn-sm fw-bold" onclick="logout()">Chiqish</button>`;
     } else {
-        authContainer.innerHTML = `
-            <a href="/login-page/" class="btn btn-light btn-sm fw-bold text-success">Kirish (Login)</a>
-        `;
+        authContainer.innerHTML = `<a href="/login-page/" class="btn btn-light btn-sm fw-bold text-success">Kirish</a>`;
     }
 }
 
-// 📌 TIZIMDAN CHIQISH (LOGOUT)
 function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("refresh");
-    alert("Tizimdan chiqdingiz.");
     window.location.reload();
 }
 
-// 📌 XARITANI ISHGA TUSHIRISH (OpenStreetMap)
-let map, marker;
+// 📌 XARITANI FAQAT MODAL ICHIDA ISHGA TUSHIRISH
 function initMap() {
-    // Standart Toshkent koordinatasi markaz qilib olindi
-    map = L.map('map').setView([41.311081, 69.240562], 12);
+    if (map) {
+        map.invalidateSize(); // Xarita o'lchamini oynaga moslab yangilash
+        return;
+    }
 
+    map = L.map('map').setView([41.311081, 69.240562], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Xarita bosilganda nuqta qo'yish
     map.on('click', function(e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
 
-        if (marker) {
-            marker.setLatLng(e.latlng);
-        } else {
-            marker = L.marker(e.latlng).addTo(map);
-        }
+        if (marker) { marker.setLatLng(e.latlng); } 
+        else { marker = L.marker(e.latlng).addTo(map); }
 
-        // Koordinatani input maydoniga yozish
         document.getElementById('address-input').value = `Kenglik: ${lat.toFixed(5)}, Uzunlik: ${lng.toFixed(5)}`;
-        
-        // Keyinchalik buyurtma berganda ishlatish uchun brauzer xotirasiga saqlash
         localStorage.setItem('delivery_lat', lat);
         localStorage.setItem('delivery_lng', lng);
     });
 }
 
-// 📌 TAOMLARNI API ORQALI YUKLASH
+// 📌 TAOMLARNI YUKLASH
 async function loadFoods() {
     const container = document.getElementById('foods-container');
-    if (!container) return;
-
     try {
         const response = await fetch('/api/foods/');
         if (!response.ok) throw new Error("API error");
@@ -160,17 +156,12 @@ async function loadFoods() {
         container.innerHTML = '';
 
         if (!foods.length) {
-            container.innerHTML = `
-                <div class="col-12">
-                    <div class="alert alert-warning text-center">Hozircha ovqatlar mavjud emas</div>
-                </div>
-            `;
+            container.innerHTML = `<div class="col-12"><div class="alert alert-warning text-center">Taomlar topilmadi.</div></div>`;
             return;
         }
 
         foods.forEach(food => {
             const imageUrl = food.image ? food.image : 'https://via.placeholder.com/300x200?text=Rasm+Mavjud+Emas';
-
             container.innerHTML += `
                 <div class="col-md-4" id="food-card-${food.id}">
                     <div class="card food-card h-100">
@@ -178,44 +169,44 @@ async function loadFoods() {
                         <div class="card-body d-flex flex-column">
                             <h4 class="text-success mb-3">${food.name}</h4>
                             <p class="text-muted flex-grow-1">${food.description || 'Tavsif mavjud emas'}</p>
-                            
                             <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
                                 <span class="badge bg-success fs-6">${food.price} UZS</span>
-                                <button class="btn btn-success btn-sm" onclick="reserveFood(${food.id})">Band qilish</button>
+                                <button class="btn btn-success btn-sm fw-bold" onclick="openOrderModal(${food.id})">Band qilish</button>
                             </div>
-                            
                             <hr class="text-muted my-2">
-                            <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteFood(${food.id})">
-                                🗑 Taomni o'chirish
-                            </button>
+                            <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteFood(${food.id})">🗑 O'chirish</button>
                         </div>
                     </div>
                 </div>
             `;
         });
     } catch (error) {
-        console.error(error);
-        container.innerHTML = `
-            <div class="col-12">
-                <div class="alert alert-danger text-center">Xatolik yuz berdi yoki server yuklanmoqda...</div>
-            </div>
-        `;
+        container.innerHTML = `<div class="col-12"><div class="alert alert-danger text-center">Yuklashda xatolik.</div></div>`;
     }
 }
 
-// 📌 TAOMNI BAND QILISH FUNKSIYASI
-function reserveFood(foodId) {
+// 📌 "BAND QILISH" BOSILGANDA MODALNI OCHISH
+function openOrderModal(foodId) {
     const token = localStorage.getItem("token");
     if (!token) {
         alert("Avval login qiling!");
         return;
     }
+    selectedFoodId = foodId; // Qaysi taom tanlanganini eslab qolamiz
+    document.getElementById('address-input').value = ""; // Eski qiymatni tozalash
+    if (marker) { map.removeLayer(marker); marker = null; } // Eski nuqtani o'chirish
+    
+    bootstrapModalInstance.show(); // Oynani ko'rsatish (Xarita shunda yuklanadi)
+}
 
-    // Xaritadan manzil tanlanganini tekshirish
+// 📌 MODAL ICHIDAGI TASDIQLASH TUGMASI BOSILGANDA API'GA YUBORISH
+function confirmOrder() {
+    const token = localStorage.getItem("token");
     const lat = localStorage.getItem('delivery_lat');
     const lng = localStorage.getItem('delivery_lng');
-    if (!lat || !lng) {
-        alert("Iltimos, avval xaritadan yetkazib berish manzilingizni belgilang!");
+
+    if (!lat || !lng || !document.getElementById('address-input').value) {
+        alert("Iltimos, xaritadan yetkazib berish manzilingizni belgilang!");
         return;
     }
 
@@ -226,54 +217,39 @@ function reserveFood(foodId) {
             'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify({
-            food_id: foodId,
-            latitude: lat,  // Xaritadan olingan koordinatalar backendga ketadi
+            food_id: selectedFoodId,
+            latitude: lat,
             longitude: lng
         })
     })
     .then(res => {
-        if (!res.ok) throw new Error("Reserve error");
+        if (!res.ok) throw new Error("Buyurtma xatosi");
         return res.json();
     })
     .then(data => {
         alert("Ovqat muvaffaqiyatli band qilindi!");
+        bootstrapModalInstance.hide(); // Oynani yopish
     })
     .catch(err => {
-        console.error(err);
         alert("Band qilishda xatolik yuz berdi");
     });
 }
 
-// 📌 TAOMNI O'CHIRISH FUNKSIYASI
+// 📌 TAOMNI O'CHIRISH
 function deleteFood(foodId) {
-    if (!confirm("Haqiqatan ham ushbu taomni butunlay o'chirib tashlamoqchimisiz?")) return;
-
+    if (!confirm("Haqiqatan ham o'chirmoqchimisiz?")) return;
     const token = localStorage.getItem("token");
     const headers = { 'Content-Type': 'application/json' };
-    
-    if (token) {
-        headers['Authorization'] = 'Bearer ' + token;
-    }
+    if (token) headers['Authorization'] = 'Bearer ' + token;
 
-    fetch(`/api/foods/${foodId}/`, {
-        method: 'DELETE',
-        headers: headers
-    })
+    fetch(`/api/foods/${foodId}/`, { method: 'DELETE', headers: headers })
     .then(res => {
         if (res.status === 204 || res.ok) {
-            alert("Taom muvaffaqiyatli o'chirildi!");
-            const card = document.getElementById(`food-card-${foodId}`);
-            if (card) card.remove();
-        } else {
-            throw new Error("Delete error");
+            alert("Taom o'chirildi!");
+            document.getElementById(`food-card-${foodId}`).remove();
         }
-    })
-    .catch(err => {
-        console.error(err);
-        alert("O'chirishda xatolik yuz berdi. (Sizda bu huquq bo'lmasligi mumkin)");
     });
 }
 </script>
-
 </body>
 </html>

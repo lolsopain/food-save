@@ -25,6 +25,10 @@
 
         <button class="btn btn-success w-100 fw-bold" onclick="login()">Kirish</button>
 
+        <p class="text-muted mt-3 text-center small">
+            Akkauntingiz yo'qmi? <a href="/register-page/" class="text-success fw-bold text-decoration-none">Ro'yxatdan o'tish</a>
+        </p>
+
         <p class="text-danger mt-3 text-center small" id="error"></p>
     </div>
 </div>
@@ -44,7 +48,7 @@ async function login() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                username: username, // 'email' o'rniga 'username' yuborilyapti
+                username: username,
                 password: password
             })
         });
@@ -71,4 +75,4 @@ async function login() {
 </script>
 
 </body>
-</html>
+</html> 
