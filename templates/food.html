@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodSave</title>
+    <title>FoodSave - Asosiy Sahifa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
         body {
             background: #f5f7fa;
@@ -32,6 +35,13 @@
             color: white !important;
             font-weight: bold;
         }
+        #map {
+            width: 100%;
+            height: 350px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
@@ -39,10 +49,28 @@
 <nav class="navbar navbar-expand-lg">
     <div class="container">
         <a class="navbar-brand" href="#">FoodSave</a>
+        <div class="ms-auto" id="auth-buttons">
+            </div>
     </div>
 </nav>
 
 <div class="container mt-5">
+    
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card p-4 border-0 shadow-sm" style="border-radius: 16px;">
+                <h4 class="text-success fw-bold mb-2">📍 Yetkazib berish manzili</h4>
+                <p class="text-muted small mb-3">Buyurtma berishdan avval uyingiz yoki turgan joyingizni xaritadan belgilang:</p>
+                
+                <div class="mb-3">
+                    <input type="text" id="address-input" class="form-control bg-white" placeholder="Xaritadan joy tanlang..." readonly>
+                </div>
+                
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="text-center mb-5">
         <h1 class="fw-bold text-success">Mavjud Ovqatlar</h1>
         <p class="text-muted">Qolgan ovqatlarni arzon narxda band qiling</p>
@@ -55,23 +83,77 @@
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    checkAuth();
+    initMap();
     loadFoods();
 });
 
+// 📌 TIZIMGA KIRGANLIKNI TEKSHIRISH VA NAVIGATSIYANI YANGILASH
+function checkAuth() {
+    const token = localStorage.getItem("token");
+    const authContainer = document.getElementById("auth-buttons");
+    
+    if (token) {
+        authContainer.innerHTML = `
+            <button class="btn btn-outline-light btn-sm fw-bold" onclick="logout()">Chiqish (Logout)</button>
+        `;
+    } else {
+        authContainer.innerHTML = `
+            <a href="/login-page/" class="btn btn-light btn-sm fw-bold text-success">Kirish (Login)</a>
+        `;
+    }
+}
+
+// 📌 TIZIMDAN CHIQISH (LOGOUT)
+function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refresh");
+    alert("Tizimdan chiqdingiz.");
+    window.location.reload();
+}
+
+// 📌 XARITANI ISHGA TUSHIRISH (OpenStreetMap)
+let map, marker;
+function initMap() {
+    // Standart Toshkent koordinatasi markaz qilib olindi
+    map = L.map('map').setView([41.311081, 69.240562], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Xarita bosilganda nuqta qo'yish
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+
+        // Koordinatani input maydoniga yozish
+        document.getElementById('address-input').value = `Kenglik: ${lat.toFixed(5)}, Uzunlik: ${lng.toFixed(5)}`;
+        
+        // Keyinchalik buyurtma berganda ishlatish uchun brauzer xotirasiga saqlash
+        localStorage.setItem('delivery_lat', lat);
+        localStorage.setItem('delivery_lng', lng);
+    });
+}
+
+// 📌 TAOMLARNI API ORQALI YUKLASH
 async function loadFoods() {
     const container = document.getElementById('foods-container');
-    if (!container) {
-        console.error("foods-container topilmadi");
-        return;
-    }
+    if (!container) return;
 
     try {
         const response = await fetch('/api/foods/');
-        if (!response.ok) {
-            throw new Error("API error");
-        }
+        if (!response.ok) throw new Error("API error");
 
         const data = await response.json();
         const foods = data.results ? data.results : data;
@@ -80,32 +162,26 @@ async function loadFoods() {
         if (!foods.length) {
             container.innerHTML = `
                 <div class="col-12">
-                    <div class="alert alert-warning text-center">
-                        Hozircha ovqatlar mavjud emas
-                    </div>
+                    <div class="alert alert-warning text-center">Hozircha ovqatlar mavjud emas</div>
                 </div>
             `;
             return;
         }
 
         foods.forEach(food => {
-            // Rasmni tekshirish: Agar Supabase-da rasm bo'lsa uni chiqaradi, bo'lmasa tayyor rasm qo'yiladi
             const imageUrl = food.image ? food.image : 'https://via.placeholder.com/300x200?text=Rasm+Mavjud+Emas';
 
             container.innerHTML += `
                 <div class="col-md-4" id="food-card-${food.id}">
                     <div class="card food-card h-100">
                         <img src="${imageUrl}" class="food-img-top" alt="${food.name}">
-                        
                         <div class="card-body d-flex flex-column">
                             <h4 class="text-success mb-3">${food.name}</h4>
                             <p class="text-muted flex-grow-1">${food.description || 'Tavsif mavjud emas'}</p>
                             
                             <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
                                 <span class="badge bg-success fs-6">${food.price} UZS</span>
-                                <button class="btn btn-outline-success btn-sm" onclick="reserveFood(${food.id})">
-                                    Band qilish
-                                </button>
+                                <button class="btn btn-success btn-sm" onclick="reserveFood(${food.id})">Band qilish</button>
                             </div>
                             
                             <hr class="text-muted my-2">
@@ -121,9 +197,7 @@ async function loadFoods() {
         console.error(error);
         container.innerHTML = `
             <div class="col-12">
-                <div class="alert alert-danger text-center">
-                    Xatolik yuz berdi yoki server yuklanmoqda...
-                </div>
+                <div class="alert alert-danger text-center">Xatolik yuz berdi yoki server yuklanmoqda...</div>
             </div>
         `;
     }
@@ -133,7 +207,15 @@ async function loadFoods() {
 function reserveFood(foodId) {
     const token = localStorage.getItem("token");
     if (!token) {
-        alert("Avval login qiling");
+        alert("Avval login qiling!");
+        return;
+    }
+
+    // Xaritadan manzil tanlanganini tekshirish
+    const lat = localStorage.getItem('delivery_lat');
+    const lng = localStorage.getItem('delivery_lng');
+    if (!lat || !lng) {
+        alert("Iltimos, avval xaritadan yetkazib berish manzilingizni belgilang!");
         return;
     }
 
@@ -144,17 +226,17 @@ function reserveFood(foodId) {
             'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify({
-            food_id: foodId
+            food_id: foodId,
+            latitude: lat,  // Xaritadan olingan koordinatalar backendga ketadi
+            longitude: lng
         })
     })
     .then(res => {
-        if (!res.ok) {
-            throw new Error("Reserve error");
-        }
+        if (!res.ok) throw new Error("Reserve error");
         return res.json();
     })
     .then(data => {
-        alert("Ovqat muvaffaqiyatli band qilindi");
+        alert("Ovqat muvaffaqiyatli band qilindi!");
     })
     .catch(err => {
         console.error(err);
@@ -164,16 +246,11 @@ function reserveFood(foodId) {
 
 // 📌 TAOMNI O'CHIRISH FUNKSIYASI
 function deleteFood(foodId) {
-    if (!confirm("Haqiqatan ham ushbu taomni butunlay o'chirib tashlamoqchimisiz?")) {
-        return;
-    }
+    if (!confirm("Haqiqatan ham ushbu taomni butunlay o'chirib tashlamoqchimisiz?")) return;
 
     const token = localStorage.getItem("token");
-    const headers = {
-        'Content-Type': 'application/json'
-    };
+    const headers = { 'Content-Type': 'application/json' };
     
-    // Agar foydalanuvchi tizimga kirgan bo'lsa, tokenni yuboradi
     if (token) {
         headers['Authorization'] = 'Bearer ' + token;
     }
@@ -185,7 +262,6 @@ function deleteFood(foodId) {
     .then(res => {
         if (res.status === 204 || res.ok) {
             alert("Taom muvaffaqiyatli o'chirildi!");
-            // Sahifani qayta yuklamasdan kartani ekrandan yo'qotish
             const card = document.getElementById(`food-card-${foodId}`);
             if (card) card.remove();
         } else {
