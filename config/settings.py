@@ -115,9 +115,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_FILE_STORAGE = 'django_storage_supabase.storage.SupabaseStorage'
 
-# Supabase kalitlari
 SUPABASE_URL = config('SUPABASE_URL', default='https://npvazxxcraaywvdupdoo.supabase.co')
-SUPABASE_KEY = config('SUPABASE_KEY', default='sb_publishable_0vlg4xbYiNQGW1G-CXBZUQ_t7y5cmQvVpB-vG')
-SUPABASE_BUCKET_NAME = 'foods'
+SUPABASE_KEY = config('SUPABASE_KEY', default='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wdmF6eHhjcmFheXd2ZHVwZG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODEwNTAsImV4cCI6MjA5NDg1NzA1MH0.Ucp3o_70FidbBrE0Cg6Uz40--jOatnIgaCrQ2yOV-qI')
+SUPABASE_BUCKET_NAME = config('SUPABASE_BUCKET_NAME', default='foods')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -1,25 +1,28 @@
-FROM python:3.12-slim
+# 1. Python asos tasviri (Python 3.13 talqini)
+FROM python:3.13-slim
 
+# 2. Ishchi katalogni belgilash
 WORKDIR /app
 
-# Tizim uchun kerakli paketlarni o'rnatamiz
-RUN apt-get update && apt-get install -y --no-install-recommends gcc python3-dev && rm -rf /var/lib/apt/lists/*
+# 3. Tizim uchun kerakli muhit o'zgaruvchilarini sozlash
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-COPY requirements.txt .
-# Pip-ni yangilab, gunicorn va whitenoise-ni kafolatlangan holda o'rnatamiz
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir gunicorn whitenoise
+# 4. requirements.txt faylini konteyner ichiga nusxalash
+COPY requirements.txt /app/
 
-COPY . .
+# 5. Barcha kerakli kutubxonalarni o'rnatish
+# --no-cache-dir keshni saqlamaydi va tasvir hajmini kichraytiradi
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Render muhitida SECRET_KEY topilmay qolsa, qurilish jarayoni (build) sinib qolmasligi uchun vaqtincha default qiymat beramiz
-ENV SECRET_KEY=temporary-secret-key-for-building-purposes
+# 6. Loyihaning barcha qolgan fayllarini konteynerga nusxalash
+COPY . /app/
 
-# Statik fayllarni (CSS, JS, rasmlar) bir joyga yig'ish
+# 7. Statik fayllarni (CSS, JS, rasmlar) bir joyga yig'ish
 RUN python manage.py collectstatic --noinput
 
+# 8. Render uchun portni ochish
 EXPOSE 10000
 
-# Avtomatik migratsiya va serverni yoqish buyrug'i (To'g'rilangan formatda)
-CMD ["sh", "-c", "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:10000"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:10000"]
