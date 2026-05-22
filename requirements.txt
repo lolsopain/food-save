@@ -1,0 +1,8 @@
+django
+django-decouple
+whitenoise
+djangorestframework
+djangorestframework-simplejwt
+drf-spectacular
+django-storage-supabase
+gunicorn
