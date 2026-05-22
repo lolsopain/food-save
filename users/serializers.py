@@ -8,7 +8,9 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'phone', 'role', 'password']
         extra_kwargs = {
             'password': {'write_only': True, 'required': False},
-            'email': {'validators': []}
+            'email': {'validators': []},
+            # 📌 MANA SHU SATR QO'SHILDI: phone kiritilishi majburiy emas!
+            'phone': {'required': False, 'allow_blank': True, 'allow_null': True}
         }
 
     def validate_email(self, value):
@@ -31,6 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop('password')
+        # Frontenddan phone kelmasa, bo'sh matn sifatida saqlaydi
         user = User.objects.create_user(
             username=validated_data.get('username'),
             email=validated_data.get('email'),
