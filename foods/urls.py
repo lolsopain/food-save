@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import FoodViewSet
 
 router = DefaultRouter()
-router.register(r'foods', FoodViewSet, basename='food')
+router.register(r'', FoodViewSet, basename='food') # Prefiks bo'sh qoldiriladi
 
 urlpatterns = [
     path('', include(router.urls)),
