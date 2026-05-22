@@ -32,7 +32,7 @@
         <a class="navbar-brand" href="#">FoodSave</a>
         
         <div class="ms-auto dropdown" id="accountMenuSection">
-            <button class="btn btn-secondary dropdown-toggle btn-sm fw-bold shadow-sm" type="button" id="accountDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="btn btn-sm btn-light dropdown-toggle fw-bold shadow-sm" type="button" id="accountDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-person-circle me-1"></i> <span id="dropdown-username-text">Akkaunt</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="accountDropdownBtn">
@@ -43,7 +43,7 @@
                 </div>
                 <div id="unauthorizedOptions">
                     <li><a class="dropdown-item fw-medium" href="/login-page/"><i class="bi bi-box-arrow-in-right me-2"></i> Kirish</a></li>
-                    <li><a class="dropdown-item fw-medium" href="/register/"><i class="bi bi-person-plus me-2"></i> Ro'yxatdan o'tish</a></li>
+                    <li><a class="dropdown-item fw-medium" href="/register-page/"><i class="bi bi-person-plus me-2"></i> Ro'yxatdan o'tish</a></li>
                 </div>
             </ul>
         </div>
@@ -56,7 +56,7 @@
             <div class="col-md-4">
                 <label class="form-label small fw-bold text-muted">Ovqat holati bo'yicha filtr:</label>
                 <select id="filter-status" class="form-select form-select-sm" onchange="filterFoods()">
-                    <option value="available">Faqat mavjud (Band qilinmaganlar)</option>
+                    <option value="available">Faqat Dynamic (Band qilinmaganlar)</option>
                     <option value="booked">Faqat band qilinganlar (Sotilganlar)</option>
                     <option value="all">Barchasi</option>
                 </select>
@@ -178,7 +178,7 @@
                 <div class="p-3 rounded-3 border border-danger bg-danger bg-opacity-10">
                     <h6 class="fw-bold text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Xavfli hudud</h6>
                     <p class="small text-muted mb-3">Akkauntingiz o'chirilgach, undagi barcha ma'lumotlar butunlay yo'qoladi.</p>
-                    <button type="button" class="btn btn-danger btn-sm w-100 fw-bold" onclick="handleDeleteAccount()">🗑️ Akkauntni butunlay o'chirish</button>
+                    <button type="button" class="btn btn-danger btn-sm w-100 fw-bold" onclick="handleDeleteAccount()">🗑 Akkauntni butunlay o'chirish</button>
                 </div>
 
             </div>
@@ -239,9 +239,8 @@ function logout() {
     window.location.reload();
 }
 
-// Akkauntni o'chirish logikasi
 async function handleDeleteAccount() {
-    const confirmDelete = confirm("Akkauntingizni o'chirishni xohlaysizmi? Uni yaratgan profil yoki admin bo'lmasangiz, bu amal rad etiladi!");
+    const confirmDelete = confirm("Akkauntingizni o'chirishni xohlaysizmi?");
     if (!confirmDelete) return;
 
     const token = localStorage.getItem("token");
@@ -262,11 +261,11 @@ async function handleDeleteAccount() {
         });
 
         if (response.ok) {
-            alert("Akkaunt tizimdan muvaffaqiyatli o'chirildi.");
+            alert("Akkaunt muvaffaqiyatli o'chirildi.");
             logout(); 
         } else {
             const data = await response.json();
-            alert(data.detail || "Akkauntni o'chirishda xatolik yuz berdi. Faqatgina yaratgan user yoki admin o'chira oladi!");
+            alert(data.detail || "Akkauntni o'chirishda xatolik yuz berdi.");
         }
     } catch (error) {
         console.error(error);
@@ -274,7 +273,6 @@ async function handleDeleteAccount() {
     }
 }
 
-// Foydalanuvchi ismini (Username) o'zgartirish
 document.getElementById("updateProfileForm")?.addEventListener("submit", async function(e) {
     e.preventDefault();
     const token = localStorage.getItem("token");
@@ -297,18 +295,13 @@ document.getElementById("updateProfileForm")?.addEventListener("submit", async f
             window.location.reload();
         } else {
             const data = await response.json();
-            if (data.username) {
-                alert("Ushbu username band! Iltimos boshqa birov ishlatmagan nom kiriting.");
-            } else {
-                alert("Xatolik yuz berdi.");
-            }
+            alert(data.username || "Xatolik yuz berdi.");
         }
     } catch (error) {
         alert("Serverga ulanish xatosi.");
     }
 });
 
-// Parolni yangilash logikasi
 document.getElementById("changePasswordForm")?.addEventListener("submit", async function(e) {
     e.preventDefault();
     const token = localStorage.getItem("token");
@@ -316,7 +309,7 @@ document.getElementById("changePasswordForm")?.addEventListener("submit", async 
     const newPassword = document.getElementById("newPassword").value;
 
     try {
-        const response = await fetch(`/api/users/change-password/`, {
+        const response = await fetch('/api/users/change-password/', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -414,7 +407,7 @@ function renderFoods(foods) {
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <span class="badge bg-success fs-6">${food.price}</span>
                             ${isBooked 
-                                ? `<button class="btn btn-secondary btn-sm fw-bold" disabled>Band qilingan</button>` 
+                                ? `<button class="btn btn-secondary btn-sm fw-bold" disabled>Band qilgan</button>` 
                                 : `<button class="btn btn-success btn-sm fw-bold" onclick="openOrderModal(${food.id})">Band qilish</button>`
                             }
                         </div>
@@ -506,7 +499,7 @@ function confirmOrder() {
         return res.json();
     })
     .then(data => {
-        alert("Buyurtma muvaffaqiyatli qabul qilindi va ushbu ovqat boshqalar uchun yashirildi!");
+        alert("Buyurtma muvaffaqiyatli qabul qilindi!");
         bootstrapModalInstance.hide();
         loadFoods(); 
     })

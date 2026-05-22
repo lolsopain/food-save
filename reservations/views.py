@@ -11,7 +11,12 @@ class StatusUpdateSerializer(serializers.Serializer):
 
 class ReservationViewSet(viewsets.ModelViewSet):
     serializer_class = ReservationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        # Buyurtma berishni hamma qila oladi (Tizimga kirmaganlar ham)
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         if not self.request or self.request.user.is_anonymous:
@@ -23,17 +28,30 @@ class ReservationViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         food_id = request.data.get('food_id')
         if not food_id:
-            return Response({"error": "food_id required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "food_id kiritilishi shart!"}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             food = Food.objects.get(id=food_id)
         except Food.DoesNotExist:
-            return Response({"error": "Food not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Ovqat topilmadi!"}, status=status.HTTP_404_NOT_FOUND)
+
+        if food.is_booked:
+            return Response({"error": "Bu ovqat allaqachon band qilingan!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Agar foydalanuvchi tizimga kirgan bo'lsa, uni biriktiramiz, aks holda None (Mehmon)
+        user = request.user if request.user.is_authenticated else None
 
         reservation = Reservation.objects.create(
-            user=request.user,
-            food=food
+            user=user,
+            food=food,
+            status='pending'
         )
+
+        # 📌 OVQATNI BAND QILINGAN HOLATGA O'TKAZISH
+        food.is_booked = True
+        food.is_available = False
+        food.save()
+
         serializer = self.get_serializer(reservation)
         return Response({
             "message": "Ovqat muvaffaqiyatli band qilindi",
@@ -48,13 +66,20 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         if new_status not in ['completed', 'cancelled', 'pending']:
             return Response(
-                {"error": "Noto'g'ri status. Faqat 'completed' yoki 'cancelled' qabul qilinadi"}, 
+                {"error": "Noto'g'ri status."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
             
         reservation.status = new_status
+        
+        # Agar buyurtma bekor qilinsa, ovqatni qaytadan sotuvga chiqaramiz
+        if new_status == 'cancelled':
+            reservation.food.is_booked = False
+            reservation.food.is_available = True
+            reservation.food.save()
+            
         reservation.save()
         return Response({
-            "message": f"Buyurtma statusi muvaffaqiyatli '{new_status}' holatiga o'zgartirildi",
+            "message": f"Buyurtma statusi '{new_status}' holatiga o'zgartirildi",
             "reservation": self.get_serializer(reservation).data
         }, status=status.HTTP_200_OK)
