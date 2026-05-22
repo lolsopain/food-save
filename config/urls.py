@@ -27,8 +27,8 @@ urlpatterns = [
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # Apps (API endpoints)
-    path('api/restaurants/', include('restaurants.urls')),
-    path('api/foods/', include('foods.urls')),
-    path('api/reservations/', include('reservations.urls')),
+    # Apps (Ildiz darajasiga ulandi, to'qnashuvlar yo'q qilindi)
+    path('api/', include('restaurants.urls')),
+    path('api/', include('foods.urls')),
+    path('api/', include('reservations.urls')),
 ]

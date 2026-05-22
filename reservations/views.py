@@ -1,22 +1,26 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Reservation
 from .serializers import ReservationSerializer
 from foods.models import Food
+from drf_spectacular.utils import extend_schema
+
+class StatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=['completed', 'cancelled', 'pending'])
 
 class ReservationViewSet(viewsets.ModelViewSet):
     serializer_class = ReservationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Admin hamma buyurtmalarni ko'ra oladi, oddiy user esa faqat o'zinikini
+        if not self.request or self.request.user.is_anonymous:
+            return Reservation.objects.none()
         if self.request.user.is_staff:
             return Reservation.objects.all()
         return Reservation.objects.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
-        # Foydalanuvchi tomonidan ovqat buyurtma berilishi
         food_id = request.data.get('food_id')
         if not food_id:
             return Response({"error": "food_id required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -26,7 +30,6 @@ class ReservationViewSet(viewsets.ModelViewSet):
         except Food.DoesNotExist:
             return Response({"error": "Food not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Buyurtma yaratish (status avtomatik ravishda 'pending' bo'ladi)
         reservation = Reservation.objects.create(
             user=request.user,
             food=food
@@ -37,12 +40,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
             "reservation": serializer.data
         }, status=status.HTTP_201_CREATED)
 
-    # ADMIN UCHUN MAXSUS ENDPOINT: Buyurtmani qabul qilish yoki rad etish
-    # URL manzili: /api/reservations/<id>/change_status/
+    @extend_schema(request=StatusUpdateSerializer, responses={200: ReservationSerializer})
     @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAdminUser])
     def change_status(self, request, pk=None):
         reservation = self.get_object()
-        new_status = request.data.get('status') # 'completed' yoki 'cancelled'
+        new_status = request.data.get('status')
         
         if new_status not in ['completed', 'cancelled', 'pending']:
             return Response(

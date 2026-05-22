@@ -9,7 +9,6 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-fallback-key-for-loca
 
 DEBUG = False
 
-# Render hostlarini va lokal xostni xavfsiz qo'shib qo'yamiz
 ALLOWED_HOSTS = ['food-save.onrender.com', 'localhost', '127.0.0.1', '*']
 
 INSTALLED_APPS = [
@@ -84,17 +83,15 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
-# ==============================================================================
-# SWAGGER (DRF SPECTACULAR) TO'LIQ VA XAFSIZ SOZLAMALARI
-# ==============================================================================
 SPECTACULAR_SETTINGS = {
     'TITLE': 'FoodSave API',
     'DESCRIPTION': 'Restaurant food reservation platform API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    # 📌 JWT Tokenlarni Swagger darchasidan yuborib test qilish imkoniyati (Xatolikni tuzatadi)
     'SECURITY': [{'BearerAuth': []}],
     'COMPONENT_SPLIT_REQUEST': True,
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+    'SCHEMA_PATH_PREFIX': r'^/api/',
 }
 
 STATIC_URL = '/static/'
@@ -102,15 +99,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# ==============================================================================
-# SUPABASE BULUTLI SAQLASH TIZIMI SOZLAMALARI
-# ==============================================================================
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'  # 📌 Bu satr qo'shildi (Kutubxonalar talab qilishi mumkin)
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_FILE_STORAGE = 'django_storage_supabase.storage.SupabaseStorage'
 
-# Supabase kalitlari
 SUPABASE_URL = config('SUPABASE_URL', default='https://npvazxxcraaywvdupdoo.supabase.co')
 SUPABASE_KEY = config('SUPABASE_KEY', default='sb_publishable_0vlg4xbYiNQGW1G-CXBZUQ_t7y5cmQvVpB-vG')
 SUPABASE_BUCKET_NAME = 'foods'

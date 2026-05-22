@@ -8,11 +8,9 @@ class FoodViewSet(viewsets.ModelViewSet):
     serializer_class = FoodSerializer
 
     def get_permissions(self):
-        # Faqat adminlar ovqat qo'shishi, o'zgartirishi va o'chirishi mumkin
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAdminUser()]
-        # Istalgan odam menyuni ko'ra oladi
         return [permissions.AllowAny()]
 
 def foods_page(request):
-    return render(request, 'foods.html')
+    return render(request, 'food.html')

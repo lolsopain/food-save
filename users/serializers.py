@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-# 1. Foydalanuvchi ma'lumotlari uchun Serializer
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -41,12 +40,9 @@ class UserSerializer(serializers.ModelSerializer):
         )
         return user
 
-
-# 2. Frontend (HTML) uchun kengaytirilgan Login Token Serializer
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        # HTML dagi JavaScript localStorage oson o'qishi uchun ma'lumotlarni qo'shamiz
         data['user_id'] = self.user.id
         data['username'] = self.user.username
         data['token'] = data['access'] 
