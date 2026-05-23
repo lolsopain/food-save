@@ -13,5 +13,5 @@ class ReservationSerializer(serializers.ModelSerializer):
             'status',
             'reserved_at'
         ]
-        # Oddiy foydalanuvchi yangi buyurtma ochayotganda statusni o'zi 'completed' qilib yuborolmaydi
+        
         read_only_fields = ['status']

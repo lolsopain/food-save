@@ -7,8 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-fallback-key-for-local-dev-12345')
 
-# 📌 AGAR LOKALDA BO'LSA DEBUG TRUE BO'LADI, RENDERDA ESA FALSE
-# Bu lokalda "whitenoise" manifest xatolarini butunlay yo'q qiladi!
+
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = ['food-save.onrender.com', 'localhost', '127.0.0.1', '*']
@@ -21,12 +20,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Uchinchi tomon kutubxonalari
+    
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_spectacular',
 
-    # Loyihaning ichki ilovalari (Apps)
+    
     'users',
     'restaurants',
     'foods',
@@ -37,7 +36,7 @@ AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Statik fayllar uchun
+    'whitenoise.middleware.WhiteNoiseMiddleware',  
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,9 +84,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
-# ==============================================================================
-# SWAGGER (DRF SPECTACULAR) MUTLAQ BARQAROR SOZLAMALARI
-# ==============================================================================
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'FoodSave API',
     'DESCRIPTION': 'Restaurant food reservation platform API',
@@ -102,12 +99,12 @@ SPECTACULAR_SETTINGS = {
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# 📌 LOKAL VA PRODUCTION UCHUN REJIMLARNI AVTOMATIK AJRATISH
+
 if DEBUG:
-    # Lokal kompyuterda xatosiz va tez ishlash uchun oddiy rejim
+   
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 else:
-    # Render serverida siqilgan va keshlanadigan xavfsiz rejim
+    
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'

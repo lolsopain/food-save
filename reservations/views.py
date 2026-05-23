@@ -13,7 +13,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
     serializer_class = ReservationSerializer
 
     def get_permissions(self):
-        # Buyurtma berishni hamma qila oladi (Tizimga kirmaganlar ham)
+        
         if self.action == 'create':
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
@@ -38,7 +38,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
         if food.is_booked:
             return Response({"error": "Bu ovqat allaqachon band qilingan!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Agar foydalanuvchi tizimga kirgan bo'lsa, uni biriktiramiz, aks holda None (Mehmon)
+        
         user = request.user if request.user.is_authenticated else None
 
         reservation = Reservation.objects.create(
@@ -47,7 +47,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
             status='pending'
         )
 
-        # 📌 OVQATNI BAND QILINGAN HOLATGA O'TKAZISH
+       
         food.is_booked = True
         food.is_available = False
         food.save()
@@ -72,7 +72,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
             
         reservation.status = new_status
         
-        # Agar buyurtma bekor qilinsa, ovqatni qaytadan sotuvga chiqaramiz
+        
         if new_status == 'cancelled':
             reservation.food.is_booked = False
             reservation.food.is_available = True

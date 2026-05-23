@@ -9,7 +9,7 @@ class Reservation(models.Model):
         ('cancelled', 'Cancelled'),
     )
 
-    # null=True, blank=True qilindi, chunki mehmonlar ham buyurtma bera olishi kerak
+   
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
