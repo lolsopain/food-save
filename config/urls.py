@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenRefreshView
-from config.views import home, foods_page 
+from .views import home, foods_page 
 from django.views.generic import TemplateView
 from users.views import CustomTokenObtainPairView
 
