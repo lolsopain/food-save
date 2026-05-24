@@ -14,3 +14,17 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 application = get_wsgi_application()
+
+import django
+from django.core.management import call_command
+
+
+django.setup()
+
+
+try:
+    print("Avtomatik migratsiya boshlandi...")
+    call_command("migrate", interactive=False)
+    print("Avtomatik migratsiya muvaffaqiyatli yakunlandi!")
+except Exception as e:
+    print(f"Migratsiyada xatolik yuz berdi: {e}")
