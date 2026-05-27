@@ -11,6 +11,8 @@ DEBUG = True  # Serverga yuklanganda Swagger ishlashi uchun True turgani ma'qul
 ALLOWED_HOSTS = ['*']  # AWS EC2 va Render havolalari xatosiz ochilishi uchun
 
 INSTALLED_APPS = [
+    'jazzmin',  # Eng tepaga, birinchi qatorga qo'shildi!
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -103,3 +105,28 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ==============================================================================
+# JAZZMIN PREMIUM DIZAYN SOZLAMALARI
+# ==============================================================================
+JAZZMIN_SETTINGS = {
+    "site_title": "FoodSave Admin",
+    "site_header": "FoodSave",
+    "site_brand": "FoodSave Boshqaruv",
+    "welcome_sign": "FoodSave Tizimiga Xush Kelibsiz",
+    "copyright": "FoodSave Ltd",
+    "search_model": ["users.User", "foods.Food"],
+    "topmenu_links": [
+        {"name": "Bosh sahifa", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Saytni ko'rish", "url": "/", "new_window": True},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "users.user": "fas fa-user",
+        "foods.food": "fas fa-utensils",
+        "restaurants.restaurant": "fas fa-store",
+        "reservations.reservation": "fas fa-shopping-cart",
+    },
+}

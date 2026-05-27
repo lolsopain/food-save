@@ -4,3 +4,4 @@ djangorestframework-simplejwt
 drf-spectacular
 gunicorn
 Pillow
+django-jazzmin
