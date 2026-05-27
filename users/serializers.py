@@ -1,41 +1,13 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'password']
-        extra_kwargs = {
-            'password': {'write_only': True, 'required': True},
-            'email': {'validators': []}
-        }
-
-    def validate_email(self, value):
-        if not value:
-            raise serializers.ValidationError("Email maydoni bo'sh bo'lishi mumkin emas!")
-        
-        user_id = self.instance.id if self.instance else None
-        email_count = User.objects.filter(email=value).exclude(id=user_id).count()
-        
-        if email_count >= 3:
-            raise serializers.ValidationError("Bu email manziliga maksimal 3 ta akkaunt biriktirilishi mumkin!")
-        
-        return value
-
-    def validate_username(self, value):
-        user_id = self.instance.id if self.instance else None
-        if User.objects.filter(username=value).exclude(id=user_id).exists():
-            raise serializers.ValidationError("Ushbu username band! Boshqa nom kiriting.")
-        return value
+        fields = ['id', 'username', 'email', 'phone', 'role', 'password']
+        extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
         password = validated_data.pop('password')
-        user = User.objects.create_user(
-            username=validated_data.get('username'),
-            email=validated_data.get('email'),
-            role=validated_data.get('role', 'client'),
-            password=password
-        )
+        user = User.objects.create_user(password=password, **validated_data)
         return user

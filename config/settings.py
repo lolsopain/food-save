@@ -1,16 +1,14 @@
 import os
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-fallback-key-for-local-dev-12345')
+SECRET_KEY = 'django-insecure-kurs-ishi-foodsave-key-production'
 
+DEBUG = True  # Serverga yuklanganda Swagger ishlashi uchun True turgani ma'qul
 
-DEBUG = config('DEBUG', default=True, cast=bool)
-
-ALLOWED_HOSTS = ['food-save.onrender.com', 'localhost', '127.0.0.1', '*']
+ALLOWED_HOSTS = ['*']  # AWS EC2 va Render havolalari xatosiz ochilishi uchun
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -20,12 +18,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_spectacular',
 
-    
     'users',
     'restaurants',
     'foods',
@@ -36,7 +32,6 @@ AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -65,6 +60,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# Docker va Server uchun eng barqaror SQLite konfiguratsiyasi
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -76,44 +72,34 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+    ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'FoodSave API',
-    'DESCRIPTION': 'Restaurant food reservation platform API',
+    'DESCRIPTION': 'Xalq va tadbirkorlar uchun oziq-ovqat isrofini kamaytirish platformasi (MVP)',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SECURITY': [{'BearerAuth': []}],
-    'COMPONENT_SPLIT_REQUEST': True,
-    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
-    'SCHEMA_PATH_PREFIX': r'^/api/',
 }
+
+LANGUAGE_CODE = 'uz'
+TIME_ZONE = 'Asia/Tashkent'
+USE_I18N = True
+USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-
-if DEBUG:
-   
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-else:
-    
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-DEFAULT_FILE_STORAGE = 'django_storage_supabase.storage.SupabaseStorage'
-
-SUPABASE_URL = config('SUPABASE_URL', default='https://npvazxxcraaywvdupdoo.supabase.co')
-SUPABASE_KEY = config('SUPABASE_KEY', default='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wdmF6eHhjcmFheXd2ZHVwZG9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODEwNTAsImV4cCI6MjA5NDg1NzA1MH0.Ucp3o_70FidbBrE0Cg6Uz40--jOatnIgaCrQ2yOV-qI')
-SUPABASE_BUCKET_NAME = config('SUPABASE_BUCKET_NAME', default='foods')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

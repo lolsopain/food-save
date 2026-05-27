@@ -3,76 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - FoodSave</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #f5f7fa; }
-        .login-card { border: none; border-radius: 16px; }
-    </style>
+    <title>FoodSave - Kirish</title>
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
 </head>
-<body class="bg-light">
-
-<div class="container mt-5" style="max-width: 400px;">
-    <div class="card p-4 shadow login-card mt-5">
-        <h3 class="text-center text-success fw-bold mb-4">Login</h3>
-        
-        <div class="mb-3">
-            <input type="text" id="username" class="form-control" placeholder="Username yoki Email">
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-t-4 border-orange-500">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-orange-500">FoodSave</h1>
+            <p class="text-gray-500 text-sm mt-1">Xalq va Tadbirkorlar uchun manfaatli platforma</p>
         </div>
-        <div class="mb-3">
-            <input type="password" id="password" class="form-control" placeholder="Password">
+        <div class="flex justify-around mb-6 border-b pb-2">
+            <button id="tab-login" class="font-semibold text-orange-500 border-b-2 border-orange-500 pb-2 w-1/2" onclick="switchTab('login')">Kirish</button>
+            <button id="tab-register" class="font-semibold text-gray-400 pb-2 w-1/2" onclick="switchTab('register')">Ro'yxatdan o'tish</button>
         </div>
+        <div id="alert-box" class="hidden mb-4 p-3 rounded-lg text-sm text-center"></div>
 
-        <button class="btn btn-success w-100 fw-bold" onclick="login()">Kirish</button>
+        <form id="login-form" class="space-y-4" onsubmit="handleLogin(event)">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Email (Login)</label>
+                <input type="email" id="login-email" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Parol</label>
+                <input type="password" id="login-password" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            </div>
+            <button type="submit" class="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold hover:bg-orange-600 transition">Tizimga kirish</button>
+        </form>
 
-        <p class="text-muted mt-3 text-center small">
-            Akkauntingiz yo'qmi? <a href="/register-page/" class="text-success fw-bold text-decoration-none">Ro'yxatdan o'tish</a>
-        </p>
-
-        <p class="text-danger mt-3 text-center small" id="error"></p>
+        <form id="register-form" class="space-y-4 hidden" onsubmit="handleRegister(event)">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Foydalanuvchi nomi</label>
+                <input type="text" id="reg-username" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="reg-email" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Telefon</label>
+                <input type="text" id="reg-phone" placeholder="+998901234567" class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Rol</label>
+                <select id="reg-role" class="mt-1 block w-full px-4 py-2 border rounded-xl">
+                    <option value="client">Mijoz (Client)</option>
+                    <option value="owner">Restoran egasi (Owner)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Parol</label>
+                <input type="password" id="reg-password" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            </div>
+            <button type="submit" class="w-full bg-green-500 text-white py-3 rounded-xl font-semibold hover:bg-green-600 transition">Ro'yxatdan o'tish</button>
+        </form>
     </div>
-</div>
 
-<script>
-async function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const errorEl = document.getElementById("error");
-    
-    errorEl.innerText = ""; // Eski xatolikni tozalash
-
-    try {
-        const response = await fetch("/api/token/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.access) {
-            // Tokenni xotiraga saqlaymiz
-            localStorage.setItem("token", data.access);
-            if (data.refresh) {
-                localStorage.setItem("refresh", data.refresh);
+    <script>
+        function switchTab(type) {
+            const lForm = document.getElementById('login-form');
+            const rForm = document.getElementById('register-form');
+            const tLog = document.getElementById('tab-login');
+            const tReg = document.getElementById('tab-register');
+            if(type === 'login') {
+                lForm.classList.remove('hidden'); rForm.classList.add('hidden');
+                tLog.className = "font-semibold text-orange-500 border-b-2 border-orange-500 pb-2 w-1/2";
+                tReg.className = "font-semibold text-gray-400 pb-2 w-1/2";
+            } else {
+                lForm.classList.add('hidden'); rForm.classList.remove('hidden');
+                tLog.className = "font-semibold text-gray-400 pb-2 w-1/2";
+                tReg.className = "font-semibold text-green-500 border-b-2 border-green-500 pb-2 w-1/2";
             }
-            // Muvaffaqiyatli kirgach, ovqatlar sahifasiga o'tkazish
-            window.location.href = "/foods-page/";
-        } else {
-            // Agar backend biror aniq xato xabari qaytarsa, o'shani ko'rsatadi
-            errorEl.innerText = data.detail || "Username yoki parol xato!";
         }
-    } catch (err) {
-        console.error(err);
-        errorEl.innerText = "Tarmoqda xatolik yuz berdi.";
-    }
-}
-</script>
-
+        function showAlert(msg, isSuc) {
+            const b = document.getElementById('alert-box'); b.innerText = msg; b.classList.remove('hidden','bg-green-100','text-green-700','bg-red-100','text-red-700');
+            b.classList.add(isSuc ? 'bg-green-100':'bg-red-100', isSuc ? 'text-green-700':'text-red-700');
+        }
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                const res = await fetch('/api/users/token/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('access', data.access);
+                    window.location.href = '/foods-page/';
+                } else { showAlert("Email yoki parol xato!", false); }
+            } catch { window.location.href = '/foods-page/'; }
+        }
+        async function handleRegister(e) {
+            e.preventDefault();
+            const data = {
+                username: document.getElementById('reg-username').value,
+                email: document.getElementById('reg-email').value,
+                phone: document.getElementById('reg-phone').value,
+                role: document.getElementById('reg-role').value,
+                password: document.getElementById('reg-password').value
+            };
+            const res = await fetch('/api/users/register/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if(res.ok) { showAlert("Muvaffaqiyatli ro'yxatdan o'tdingiz!", true); switchTab('login'); }
+            else { showAlert("Xatolik yuz berdi!", false); }
+        }
+    </script>
 </body>
-</html> 
+</html>

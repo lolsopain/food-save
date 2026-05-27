@@ -1,8 +1,6 @@
-django
-django-decouple
-whitenoise
+Django>=4.2,<5.0
 djangorestframework
 djangorestframework-simplejwt
 drf-spectacular
-django-storage-supabase
 gunicorn
+Pillow

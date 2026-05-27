@@ -3,510 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodSave - Buyurtma berish</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-    <style>
-        body { background: #f5f7fa; }
-        .navbar { background: #198754; position: relative; }
-        .navbar-brand { color: white !important; font-weight: bold; }
-        .food-card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: 0.2s ease;
-            overflow: hidden;
-        }
-        .food-card:hover { transform: translateY(-4px); }
-        .food-img-top { width: 100%; height: 200px; object-fit: cover; background-color: #eaeaea; }
-        #map { width: 100%; height: 250px; border-radius: 8px; border: 1px solid #ddd; display: block; }
-        .category-title { border-left: 5px solid #198754; padding-left: 10px; font-weight: bold; color: #198754; }
-    </style>
+    <title>FoodSave - Taomlar</title>
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen" onload="fetchFoods()">
+    <nav class="bg-white shadow px-6 py-4 flex justify-between items-center border-b-2 border-orange-500">
+        <h1 class="text-2xl font-bold text-orange-500">FoodSave</h1>
+        <button onclick="logout()" class="bg-gray-200 px-4 py-2 rounded-xl text-sm">Chiqish</button>
+    </nav>
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Mavjud Taomlar (Aksiya va Isrofga qarshi)</h2>
+        <div id="foods-container" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </div>
 
-<nav class="navbar navbar-expand-lg">
-    <div class="container">
-        <a class="navbar-brand" href="#">FoodSave</a>
-        
-        <div class="ms-auto dropdown" id="accountMenuSection">
-            <button class="btn btn-sm btn-light dropdown-toggle fw-bold shadow-sm" type="button" id="accountDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-person-circle me-1"></i> <span id="dropdown-username-text">Akkaunt</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="accountDropdownBtn">
-                <div id="authorizedOptions" class="d-none">
-                    <li><a class="dropdown-item fw-medium" href="#" data-bs-toggle="modal" data-bs-target="#accountSettingsModal"><i class="bi bi-gear me-2"></i> Sozlamalar</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger fw-medium" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i> Chiqish (Log out)</a></li>
+    <div id="booking-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+            <h3 class="text-xl font-bold mb-4" id="modal-title">Bron qilish</h3>
+            <form onsubmit="submitReservation(event)" class="space-y-4">
+                <input type="hidden" id="modal-food-id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Ismingiz</label>
+                    <input type="text" id="client-name" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
                 </div>
-                <div id="unauthorizedOptions">
-                    <li><a class="dropdown-item fw-medium" href="/login-page/"><i class="bi bi-box-arrow-in-right me-2"></i> Kirish</a></li>
-                    <li><a class="dropdown-item fw-medium" href="/register-page/"><i class="bi bi-person-plus me-2"></i> Ro'yxatdan o'tish</a></li>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Telefoningiz</label>
+                    <input type="text" id="client-phone" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
                 </div>
-            </ul>
-        </div>
-    </div>
-</nav>
-
-<div class="container mt-4">
-    <div class="card p-3 mb-4 shadow-sm border-0" style="border-radius: 12px;">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted">Ovqat holati bo'yicha filtr:</label>
-                <select id="filter-status" class="form-select form-select-sm" onchange="filterFoods()">
-                    <option value="available">Faqat Dynamic (Band qilinmaganlar)</option>
-                    <option value="booked">Faqat band qilinganlar (Sotilganlar)</option>
-                    <option value="all">Barchasi</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="mb-5">
-        <h3 class="category-title mb-4">✨ Yangi tayyorlangan ovqatlar</h3>
-        <div id="new-foods-container" class="row g-4">
-            <div class="text-center text-muted"><p>Yuklanmoqda...</p></div>
-        </div>
-    </div>
-
-    <div class="mb-5">
-        <h3 class="category-title mb-4">🍃 Tejalgan (Qolgan) ovqatlar (Arzonlashtirilgan)</h3>
-        <div id="leftover-foods-container" class="row g-4">
-            <div class="text-center text-muted"><p>Yuklanmoqda...</p></div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="border-radius: 16px;">
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold text-success" id="orderModalLabel">🛒 Buyurtmani rasmiylashtirish</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row g-3">
-                    <div id="guest-info-section" class="col-12 d-none">
-                        <h6 class="fw-bold text-secondary">Aloqa ma'lumotlari</h6>
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <input type="text" id="client-name" class="form-control form-control-sm" placeholder="Ismingiz">
-                            </div>
-                            <div class="col-md-6">
-                                <input type="text" id="client-phone" class="form-control form-control-sm" placeholder="Telefon raqamingiz (+998...)">
-                            </div>
-                        </div>
-                        <hr>
-                    </div>
-
-                    <div class="col-md-6">
-                        <h6 class="fw-bold text-secondary">Olish usuli:</h6>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="deliveryType" id="typeDelivery" value="delivery" checked onchange="toggleDeliveryMethod()">
-                            <label class="form-check-label" for="typeDelivery">🚗 Yetkazib berish (Delivery)</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="deliveryType" id="typePickup" value="pickup" onchange="toggleDeliveryMethod()">
-                            <label class="form-check-label" for="typePickup">🏃‍♂️ O'zi kelib olib ketish (Self-pickup)</label>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <h6 class="fw-bold text-secondary">To'lov turi:</h6>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="payOnline" value="online" checked>
-                            <label class="form-check-label" for="payOnline">💳 Karta orqali onlayn to'lov</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="payCash" value="cash">
-                            <label class="form-check-label" for="payCash">💵 Naqd pul orqali</label>
-                        </div>
-                    </div>
-
-                    <div id="map-section" class="col-12 mt-3">
-                        <h6 class="fw-bold text-secondary">📍 Yetkazib berish manzili (Xaritadan belgilang):</h6>
-                        <input type="text" id="address-input" class="form-control form-control-sm bg-light mb-2" placeholder="Xaritadan joy tanlang..." readonly>
-                        <div id="map"></div>
-                    </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Yetkazish</label>
+                    <select id="delivery-type" class="mt-1 block w-full px-4 py-2 border rounded-xl">
+                        <option value="pickup">Olib ketish</option>
+                        <option value="delivery">Yetkazib berish</option>
+                    </select>
                 </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Bekor qilish</button>
-                <button type="button" class="btn btn-success btn-sm fw-bold" onclick="confirmOrder()">Tasdiqlash va Band qilish</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="accountSettingsModal" tabindex="-1" aria-labelledby="accountSettingsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px;">
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold text-dark" id="accountSettingsModalLabel">⚙️ Akkaunt sozlamalari</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body shadow-sm">
-                
-                <form id="updateProfileForm" class="mb-4">
-                    <h6 class="fw-bold text-secondary mb-2">Foydalanuvchi nomini yangilash</h6>
-                    <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text"><i class="bi bi-person"></i></span>
-                        <input type="text" id="settingUsername" class="form-control" placeholder="Yangi username" required>
-                    </div>
-                    <button type="submit" class="btn btn-success btn-sm w-100 fw-bold">Ismni yangilash</button>
-                </form>
-
-                <hr class="text-muted">
-
-                <form id="changePasswordForm" class="mb-4">
-                    <h6 class="fw-bold text-secondary mb-2">Parolni o'zgartirish</h6>
-                    <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-                        <input type="password" id="oldPassword" class="form-control" placeholder="Eski parol" required>
-                    </div>
-                    <div class="input-group input-group-sm mb-3">
-                        <span class="input-group-text"><i class="bi bi-key"></i></span>
-                        <input type="password" id="newPassword" class="form-control" placeholder="Yangi parol" required>
-                    </div>
-                    <button type="submit" class="btn btn-success btn-sm w-100 fw-bold">Parolni yangilash</button>
-                </form>
-
-                <hr class="text-muted">
-
-                <div class="p-3 rounded-3 border border-danger bg-danger bg-opacity-10">
-                    <h6 class="fw-bold text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Xavfli hudud</h6>
-                    <p class="small text-muted mb-3">Akkauntingiz o'chirilgach, undagi barcha ma'lumotlar butunlay yo'qoladi.</p>
-                    <button type="button" class="btn btn-danger btn-sm w-100 fw-bold" onclick="handleDeleteAccount()">🗑 Akkauntni butunlay o'chirish</button>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">To'lov</label>
+                    <select id="payment-method" class="mt-1 block w-full px-4 py-2 border rounded-xl">
+                        <option value="cash">Naqd</option>
+                        <option value="card">Karta</option>
+                    </select>
                 </div>
-
-            </div>
+                <div class="flex space-x-3">
+                    <button type="button" onclick="closeModal()" class="w-1/2 bg-gray-200 py-2 rounded-xl">Bekor qilish</button>
+                    <button type="submit" class="w-1/2 bg-green-500 text-white py-2 rounded-xl">Tasdiqlash</button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-let map, marker;
-let selectedFoodId = null;
-let bootstrapModalInstance = null;
-let allFoodsGlobal = []; 
-
-document.addEventListener("DOMContentLoaded", function () {
-    checkAuth();
-    loadFoods();
-    
-    const orderModalEl = document.getElementById('orderModal');
-    bootstrapModalInstance = new bootstrap.Modal(orderModalEl);
-    
-    orderModalEl.addEventListener('shown.bs.modal', function () {
-        if (document.getElementById('typeDelivery').checked) {
-            initMap();
-        }
-    });
-});
-
-function checkAuth() {
-    const token = localStorage.getItem("token");
-    const authorizedOpts = document.getElementById("authorizedOptions");
-    const unauthorizedOpts = document.getElementById("unauthorizedOptions");
-    const usernameText = document.getElementById("dropdown-username-text");
-
-    if (token) {
-        authorizedOpts.classList.remove("d-none");
-        unauthorizedOpts.classList.add("d-none");
-        
-        const storedUsername = localStorage.getItem("username") || "Akkaunt";
-        usernameText.innerText = storedUsername;
-        
-        if(document.getElementById("settingUsername")) {
-            document.getElementById("settingUsername").value = localStorage.getItem("username") || "";
-        }
-    } else {
-        authorizedOpts.classList.add("d-none");
-        unauthorizedOpts.classList.remove("d-none");
-        usernameText.innerText = "Akkaunt";
-    }
-}
-
-function logout() {
-    localStorage.clear();
-    sessionStorage.clear();
-    alert("Tizimdan muvaffaqiyatli chiqdingiz.");
-    window.location.reload();
-}
-
-async function handleDeleteAccount() {
-    const confirmDelete = confirm("Akkauntingizni o'chirishni xohlaysizmi?");
-    if (!confirmDelete) return;
-
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("user_id"); 
-
-    if (!userId || !token) {
-        alert("Siz tizimga kirmagansiz!");
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/users/${userId}/`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+    <script>
+        async function fetchFoods() {
+            const res = await fetch('/api/foods/');
+            const foods = await res.json();
+            const container = document.getElementById('foods-container');
+            container.innerHTML = '';
+            if(foods.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center col-span-3">Hozircha taom kiritilmagan. Admin paneldan (/admin) restoran va taom qo\'shing.</p>';
+                return;
             }
-        });
-
-        if (response.ok) {
-            alert("Akkaunt muvaffaqiyatli o'chirildi.");
-            logout(); 
-        } else {
-            const data = await response.json();
-            alert(data.detail || "Akkauntni o'chirishda xatolik yuz berdi.");
-        }
-    } catch (error) {
-        console.error(error);
-        alert("Server bilan aloqada xatolik.");
-    }
-}
-
-document.getElementById("updateProfileForm")?.addEventListener("submit", async function(e) {
-    e.preventDefault();
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("user_id");
-    const newUsername = document.getElementById("settingUsername").value;
-
-    try {
-        const response = await fetch(`/api/users/${userId}/`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username: newUsername })
-        });
-
-        if (response.ok) {
-            localStorage.setItem("username", newUsername);
-            alert("Foydalanuvchi nomi muvaffaqiyatli o'zgartirildi!");
-            window.location.reload();
-        } else {
-            const data = await response.json();
-            alert(data.username || "Xatolik yuz berdi.");
-        }
-    } catch (error) {
-        alert("Serverga ulanish xatosi.");
-    }
-});
-
-document.getElementById("changePasswordForm")?.addEventListener("submit", async function(e) {
-    e.preventDefault();
-    const token = localStorage.getItem("token");
-    const oldPassword = document.getElementById("oldPassword").value;
-    const newPassword = document.getElementById("newPassword").value;
-
-    try {
-        const response = await fetch('/api/users/change-password/', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                old_password: oldPassword, 
-                new_password: newPassword 
-            })
-        });
-
-        if (response.ok) {
-            alert("Parolingiz muvaffaqiyatli yangilandi!");
-            document.getElementById("changePasswordForm").reset();
-            bootstrap.Modal.getInstance(document.getElementById('accountSettingsModal')).hide();
-        } else {
-            const data = await response.json();
-            alert(data.detail || "Eski parol noto'g'ri kiritildi yoki yangi parol talablarga mos emas.");
-        }
-    } catch (error) {
-        alert("Tizimda xatolik yuz berdi.");
-    }
-});
-
-function toggleDeliveryMethod() {
-    const isDelivery = document.getElementById('typeDelivery').checked;
-    const mapSection = document.getElementById('map-section');
-    if (isDelivery) {
-        mapSection.classList.remove('d-none');
-        setTimeout(() => { initMap(); }, 200);
-    } else {
-        mapSection.classList.add('d-none');
-    }
-}
-
-function initMap() {
-    if (map) {
-        map.invalidateSize();
-        return;
-    }
-    map = L.map('map').setView([41.311081, 69.240562], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-
-    map.on('click', function(e) {
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-        if (marker) { marker.setLatLng(e.latlng); } 
-        else { marker = L.marker(e.latlng).addTo(map); }
-        document.getElementById('address-input').value = `Kenglik: ${lat.toFixed(5)}, Uzunlik: ${lng.toFixed(5)}`;
-        localStorage.setItem('delivery_lat', lat);
-        localStorage.setItem('delivery_lng', lng);
-    });
-}
-
-async function loadFoods() {
-    try {
-        const response = await fetch('/api/foods/');
-        if (!response.ok) throw new Error("API xatosi");
-        const data = await response.json();
-        allFoodsGlobal = data.results ? data.results : data;
-        renderFoods(allFoodsGlobal);
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-function renderFoods(foods) {
-    const newContainer = document.getElementById('new-foods-container');
-    const leftoverContainer = document.getElementById('leftover-foods-container');
-    const statusFilter = document.getElementById('filter-status').value;
-
-    newContainer.innerHTML = '';
-    leftoverContainer.innerHTML = '';
-
-    let filtered = foods;
-    if (statusFilter === 'available') {
-        filtered = foods.filter(f => !f.is_booked); 
-    } else if (statusFilter === 'booked') {
-        filtered = foods.filter(f => f.is_booked); 
-    }
-
-    let newCount = 0, leftoverCount = 0;
-
-    filtered.forEach(food => {
-        const imageUrl = food.image ? food.image : 'https://via.placeholder.com/300x200?text=Rasm';
-        const isBooked = food.is_booked; 
-        
-        const cardHtml = `
-            <div class="col-md-4">
-                <div class="card food-card h-100 ${isBooked ? 'opacity-50' : ''}">
-                    <img src="${imageUrl}" class="food-img-top" alt="${food.name}">
-                    <div class="card-body d-flex flex-column">
-                        <h4 class="text-success mb-2">${food.name}</h4>
-                        <p class="text-muted flex-grow-1 small">${food.description || ''}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <span class="badge bg-success fs-6">${food.price}</span>
-                            ${isBooked 
-                                ? `<button class="btn btn-secondary btn-sm fw-bold" disabled>Band qilgan</button>` 
-                                : `<button class="btn btn-success btn-sm fw-bold" onclick="openOrderModal(${food.id})">Band qilish</button>`
-                            }
-                        </div>
+            foods.forEach(f => {
+                container.innerHTML += `
+                    <div class="bg-white rounded-2xl shadow border p-5">
+                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold uppercase">${f.food_type}</span>
+                        <h3 class="text-xl font-bold mt-2">${f.name}</h3>
+                        <p class="text-gray-600 text-sm my-2">${f.description || ''}</p>
+                        <p class="text-orange-500 font-bold text-lg">${f.price} SO'M</p>
+                        <button onclick="openModal(${f.id}, '${f.name}')" class="w-full bg-orange-500 text-white py-2 rounded-xl mt-4">Bron qilish</button>
                     </div>
-                </div>
-            </div>
-        `;
-
-        if (food.food_type === 'new') {
-            newContainer.innerHTML += cardHtml;
-            newCount++;
-        } else {
-            leftoverContainer.innerHTML += cardHtml;
-            leftoverCount++;
+                `;
+            });
         }
-    });
-
-    if(newCount === 0) newContainer.innerHTML = '<p class="text-muted ps-3">Bu turda ovqatlar mavjud emas.</p>';
-    if(leftoverCount === 0) leftoverContainer.innerHTML = '<p class="text-muted ps-3">Bu turda ovqatlar mavjud emas.</p>';
-}
-
-function filterFoods() {
-    renderFoods(allFoodsGlobal);
-}
-
-function openOrderModal(foodId) {
-    selectedFoodId = foodId;
-    const token = localStorage.getItem("token");
-    const guestSection = document.getElementById("guest-info-section");
-
-    if (!token) {
-        guestSection.classList.remove("d-none");
-    } else {
-        guestSection.classList.add("d-none");
-    }
-
-    document.getElementById('address-input').value = "";
-    if (marker) { map.removeLayer(marker); marker = null; }
-    
-    bootstrapModalInstance.show();
-}
-
-function confirmOrder() {
-    const token = localStorage.getItem("token");
-    const deliveryType = document.querySelector('input[name="deliveryType"]:checked').value;
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-    
-    let lat = null, lng = null;
-    let clientName = null, clientPhone = null;
-
-    if (!token) {
-        clientName = document.getElementById("client-name").value;
-        clientPhone = document.getElementById("client-phone").value;
-        if (!clientName || !clientPhone) {
-            alert("Iltimos, ismingiz va telefon raqamingizni kiriting!");
-            return;
+        function openModal(id, name) {
+            document.getElementById('modal-food-id').value = id;
+            document.getElementById('modal-title').innerText = name + " - Bron qilish";
+            document.getElementById('booking-modal').classList.remove('hidden');
         }
-    }
-
-    if (deliveryType === 'delivery') {
-        lat = localStorage.getItem('delivery_lat');
-        lng = localStorage.getItem('delivery_lng');
-        if (!lat || !lng || !document.getElementById('address-input').value) {
-            alert("Iltimos, yetkazib berish manzilini xaritada belgilang!");
-            return;
+        function closeModal() { document.getElementById('booking-modal').classList.add('hidden'); }
+        async function submitReservation(e) {
+            e.preventDefault();
+            const data = {
+                food: parseInt(document.getElementById('modal-food-id').value),
+                client_name: document.getElementById('client-name').value,
+                client_phone: document.getElementById('client-phone').value,
+                delivery_type: document.getElementById('delivery-type').value,
+                payment_method: document.getElementById('payment-method').value
+            };
+            const res = await fetch('/api/reservations/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if(res.ok) { alert("Muvaffaqiyatli bron qilindi!"); closeModal(); fetchFoods(); }
         }
-    }
-
-    const payload = {
-        food_id: selectedFoodId,
-        delivery_type: deliveryType,
-        payment_method: paymentMethod,
-        latitude: lat,
-        longitude: lng,
-        client_name: clientName,
-        client_phone: clientPhone
-    };
-
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-
-    fetch('/api/reservations/', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload)
-    })
-    .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
-    })
-    .then(data => {
-        alert("Buyurtma muvaffaqiyatli qabul qilindi!");
-        bootstrapModalInstance.hide();
-        loadFoods(); 
-    })
-    .catch(err => {
-        alert("Buyurtma berishda xatolik yuz berdi");
-    });
-}
-</script>
+        function logout() { localStorage.clear(); window.location.href = '/'; }
+    </script>
 </body>
 </html>

@@ -1,34 +1,20 @@
 from django.db import models
-from users.models import User
-from foods.models import Food
 
 class Reservation(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
         ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
     )
-
-   
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='reservations',
-        null=True,
-        blank=True
-    )
-    food = models.ForeignKey(
-        Food,
-        on_delete=models.CASCADE,
-        related_name='reservations'
-    )
-    reserved_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending'
-    )
+    food = models.ForeignKey('foods.Food', on_delete=models.CASCADE)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, null=True, blank=True)
+    client_name = models.CharField(max_length=255, blank=True, null=True)
+    client_phone = models.CharField(max_length=30, blank=True, null=True)
+    delivery_type = models.CharField(max_length=30)
+    payment_method = models.CharField(max_length=30)
+    latitude = models.CharField(max_length=100, blank=True, null=True)
+    longitude = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        user_email = self.user.email if self.user else "Mehmon"
-        return f"{user_email} -> {self.food.name}"
+        return f"Order {self.id} - {self.client_name}"
