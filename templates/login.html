@@ -3,58 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodSave - Kirish</title>
-    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
+    <title>FoodSave - Kirish va Ro'yxatdan o'tish</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; min-height: bg-screen; height: 100vh; padding: 20px; }
+        .card { background: white; padding: 40px; rounded-radius: 16px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); w-full: max-width; width: 100%; max-width: 400px; border-top: 5px solid #ff6b35; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: #ff6b35; font-size: 32px; font-weight: bold; }
+        .header p { color: #6b7280; font-size: 14px; margin-top: 5px; }
+        .tabs { display: flex; justify-content: space-around; margin-bottom: 25px; border-b: 1px solid #e5e7eb; padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; font-size: 16px; font-weight: 600; cursor: pointer; padding-bottom: 5px; width: 50%; text-align: center; color: #9ca3af; }
+        .tab-btn.active-login { color: #ff6b35; border-bottom: 3px solid #ff6b35; }
+        .tab-btn.active-reg { color: #10b981; border-bottom: 3px solid #10b981; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 15px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; outline: none; transition: 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: #ff6b35; box-shadow: 0 0 0 3px rgba(255,107,53,0.15); }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; color: white; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn-orange { background-color: #ff6b35; }
+        .btn-orange:hover { background-color: #e05621; }
+        .btn-green { background-color: #10b981; }
+        .btn-green:hover { background-color: #059669; }
+        .hidden { display: none; }
+        .alert { padding: 10px; border-radius: 8px; font-size: 13px; text-align: center; margin-bottom: 15px; }
+        .alert-success { background-color: #d1fae5; color: #065f46; }
+        .alert-danger { background-color: #fee2e2; color: #991b1b; }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-t-4 border-orange-500">
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-orange-500">FoodSave</h1>
-            <p class="text-gray-500 text-sm mt-1">Xalq va Tadbirkorlar uchun manfaatli platforma</p>
-        </div>
-        <div class="flex justify-around mb-6 border-b pb-2">
-            <button id="tab-login" class="font-semibold text-orange-500 border-b-2 border-orange-500 pb-2 w-1/2" onclick="switchTab('login')">Kirish</button>
-            <button id="tab-register" class="font-semibold text-gray-400 pb-2 w-1/2" onclick="switchTab('register')">Ro'yxatdan o'tish</button>
-        </div>
-        <div id="alert-box" class="hidden mb-4 p-3 rounded-lg text-sm text-center"></div>
+<body>
 
-        <form id="login-form" class="space-y-4" onsubmit="handleLogin(event)">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Email (Login)</label>
-                <input type="email" id="login-email" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+    <div class="card">
+        <div class="header">
+            <h1>FoodSave</h1>
+            <p>Xalq va tadbirkorlar uchun manfaatli platforma</p>
+        </div>
+
+        <div class="tabs">
+            <button id="tab-login" class="tab-btn active-login" onclick="switchTab('login')">Kirish</button>
+            <button id="tab-register" class="tab-btn" onclick="switchTab('register')">Ro'yxatdan o'tish</button>
+        </div>
+
+        <div id="alert-box" class="alert hidden"></div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Email (Login)</label>
+                <input type="email" id="login-email" required value="lolsopain@gmail.com">
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Parol</label>
-                <input type="password" id="login-password" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            <div class="form-group">
+                <label>Parol</label>
+                <input type="password" id="login-password" required>
             </div>
-            <button type="submit" class="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold hover:bg-orange-600 transition">Tizimga kirish</button>
+            <button type="submit" class="btn btn-orange">Tizimga kirish</button>
         </form>
 
-        <form id="register-form" class="space-y-4 hidden" onsubmit="handleRegister(event)">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Foydalanuvchi nomi</label>
-                <input type="text" id="reg-username" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+        <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label>Foydalanuvchi nomi</label>
+                <input type="text" id="reg-username" required>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="reg-email" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="reg-email" required>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Telefon</label>
-                <input type="text" id="reg-phone" placeholder="+998901234567" class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            <div class="form-group">
+                <label>Telefon</label>
+                <input type="text" id="reg-phone" placeholder="+998901234567">
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Rol</label>
-                <select id="reg-role" class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            <div class="form-group">
+                <label>Rol</label>
+                <select id="reg-role">
                     <option value="client">Mijoz (Client)</option>
                     <option value="owner">Restoran egasi (Owner)</option>
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Parol</label>
-                <input type="password" id="reg-password" required class="mt-1 block w-full px-4 py-2 border rounded-xl">
+            <div class="form-group">
+                <label>Parol</label>
+                <input type="password" id="reg-password" required>
             </div>
-            <button type="submit" class="w-full bg-green-500 text-white py-3 rounded-xl font-semibold hover:bg-green-600 transition">Ro'yxatdan o'tish</button>
+            <button type="submit" class="btn btn-green">Ro'yxatdan o'tish</button>
         </form>
     </div>
 
@@ -64,20 +91,24 @@
             const rForm = document.getElementById('register-form');
             const tLog = document.getElementById('tab-login');
             const tReg = document.getElementById('tab-register');
+            
             if(type === 'login') {
                 lForm.classList.remove('hidden'); rForm.classList.add('hidden');
-                tLog.className = "font-semibold text-orange-500 border-b-2 border-orange-500 pb-2 w-1/2";
-                tReg.className = "font-semibold text-gray-400 pb-2 w-1/2";
+                tLog.className = "tab-btn active-login";
+                tReg.className = "tab-btn";
             } else {
                 lForm.classList.add('hidden'); rForm.classList.remove('hidden');
-                tLog.className = "font-semibold text-gray-400 pb-2 w-1/2";
-                tReg.className = "font-semibold text-green-500 border-b-2 border-green-500 pb-2 w-1/2";
+                tLog.className = "tab-btn";
+                tReg.className = "tab-btn active-reg";
             }
         }
+
         function showAlert(msg, isSuc) {
-            const b = document.getElementById('alert-box'); b.innerText = msg; b.classList.remove('hidden','bg-green-100','text-green-700','bg-red-100','text-red-700');
-            b.classList.add(isSuc ? 'bg-green-100':'bg-red-100', isSuc ? 'text-green-700':'text-red-700');
+            const b = document.getElementById('alert-box'); 
+            b.innerText = msg; 
+            b.className = isSuc ? "alert alert-success" : "alert alert-danger";
         }
+
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
@@ -95,6 +126,7 @@
                 } else { showAlert("Email yoki parol xato!", false); }
             } catch { window.location.href = '/foods-page/'; }
         }
+
         async function handleRegister(e) {
             e.preventDefault();
             const data = {
