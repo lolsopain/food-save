@@ -28,7 +28,7 @@
         /* Modal Styles */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
         .modal-content { background: white; padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; position: relative; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body onload="initPage()">
@@ -61,7 +61,7 @@
                 </form>
             </div>
             <div class="card">
-                <h3>📥 Kelgan Bronlar (Buyurtmalar)</h3>
+                <h3>📥 Kelgan Buyurtmalar</h3>
                 <div id="orders-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
                     <p style="color:#6b7280; text-align:center;">Hozircha buyurtmalar yo'q.</p>
                 </div>
@@ -74,7 +74,7 @@
 
     <div id="booking-modal" class="modal hidden">
         <div class="modal-content">
-            <h3 id="modal-title" style="margin-bottom: 15px;">Bron qilish</h3>
+            <h3 id="modal-title" style="margin-bottom: 15px;">Buyurtma qilish</h3>
             <form onsubmit="submitReservation(event)">
                 <input type="hidden" id="modal-food-id">
                 <div class="form-group"><label>Ismingiz</label><input type="text" id="client-name" required></div>
@@ -122,7 +122,7 @@
                         <h3 style="margin-top:10px;">${f.name}</h3>
                         <p style="font-size:13px; color:#6b7280;">${f.description || ''}</p>
                         <div class="price-text">${f.price} SO'M</div>
-                        <button onclick="openModal(${f.id}, '${f.name}')" class="btn-book">Bron qilish</button>
+                        <button onclick="openModal(${f.id}, '${f.name}')" class="btn-book">Buyurtma qilish</button>
                     </div>
                 `;
             });
@@ -164,10 +164,18 @@
 
         function openModal(id, name) {
             document.getElementById('modal-food-id').value = id;
-            document.getElementById('modal-title').innerText = name + " - Bron qilish";
-            document.getElementById('booking-modal').classList.remove('hidden');
+            document.getElementById('modal-title').innerText = name + " - Buyurtma qilish";
+            
+            const modal = document.getElementById('booking-modal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
         }
-        function closeModal() { document.getElementById('booking-modal').classList.add('hidden'); }
+
+        function closeModal() {
+            const modal = document.getElementById('booking-modal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
 
         async function submitReservation(e) {
             e.preventDefault();
@@ -180,7 +188,7 @@
                 status: 'pending'
             };
             const res = await fetch('/api/reservations/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            if(res.ok) { alert("Bron qilindi!"); closeModal(); fetchFoods(); fetchOrders(); }
+            if(res.ok) { alert("Buyurtma muvaffaqiyatli qabul qilindi!"); closeModal(); fetchFoods(); fetchOrders(); }
         }
 
         function logout() { localStorage.clear(); window.location.href = '/'; }
