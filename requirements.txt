@@ -5,3 +5,5 @@ drf-spectacular
 gunicorn
 Pillow
 django-jazzmin
+pyTelegramBotAPI
+requests

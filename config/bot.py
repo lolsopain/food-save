@@ -3,150 +3,303 @@ import telebot
 from telebot import types
 import requests
 
-# Bot Tokeningizni @BotFather'dan olib shu yerga qo'ying
-BOT_TOKEN = "8692490877:AAHvz4SOORQlxDoK16nY3XgJctzmgDlU5yA" 
+# ENV orqali olish
+BOT_TOKEN = os.getenv("8692490877:AAHvz4SOORQlxDoK16nY3XgJctzmgDlU5yA")
+
+if not BOT_TOKEN:
+    raise Exception("BOT_TOKEN topilmadi!")
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Django API manzili (Mahalliyda http://127.0.0.1:8000, Render'da o'zingizning havolangiz)
-# Render havolangiz: 'https://food-save.onrender.com/api'
-API_BASE_URL = 'http://127.0.0.1:8000/api'
+# Render API URL
+API_BASE_URL = os.getenv(
+    "API_BASE_URL",
+    "https://food-save.onrender.com/api"
+)
 
-# Foydalanuvchi buyurtma berish jarayonidagi vaqtinchalik ma'lumotlarni saqlash uchun
 user_steps = {}
+
+# =========================
+# START
+# =========================
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
+
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
     btn_foods = types.KeyboardButton("🛒 Taomlar vitrinasi")
     btn_help = types.KeyboardButton("ℹ️ Loyiha haqida")
+
     markup.add(btn_foods, btn_help)
-    
+
     bot.send_message(
-        message.chat.id, 
-        f"Xush kelibsiz, {message.from_user.first_name}!\nFoodSave botiga xush kelibsiz. Bu yerda siz restoranlardagi eng arzon va mazali aksiya taomlarini buyurtma qilishingiz mumkin.", 
+        message.chat.id,
+        f"Salom {message.from_user.first_name} 👋\n\n"
+        f"FoodSave botiga xush kelibsiz!",
         reply_markup=markup
     )
 
+# =========================
+# SHOW FOODS
+# =========================
+
 @bot.message_handler(func=lambda message: message.text == "🛒 Taomlar vitrinasi")
 def show_foods(message):
-    bot.send_message(message.chat.id, "🔄 Taomlar ro'yxati bazadan yuklanmoqda...")
-    
+
+    bot.send_message(
+        message.chat.id,
+        "🔄 Taomlar yuklanmoqda..."
+    )
+
     try:
-        # Django API'dan taomlarni olish
-        response = requests.get(f"{API_BASE_URL}/foods/")
-        if response.status_code == 200:
-            foods = response.json()
-            
-            if not foods:
-                bot.send_message(message.chat.id, "Hozircha vitrinada taomlar mavjud emas.")
-                return
-                
-            for food in foods:
-                food_type = "Aksiya 🔥" if food['food_type'] == 'new' else "Ortib qolgan (Isrofga qarshi) 🍃"
-                caption = (
-                    f"🍏 Taom: {food['name']}\n"
-                    f"📝 Tavsif: {food.get('description', 'Mavjud emas')}\n"
-                    f"💰 Narxi: {int(food['price']):,} SO'M\n"
-                    f"📌 Turi: {food_type}"
+
+        response = requests.get(
+            f"{API_BASE_URL}/foods/",
+            timeout=15
+        )
+
+        if response.status_code != 200:
+            bot.send_message(
+                message.chat.id,
+                "❌ API bilan bog‘lanib bo‘lmadi."
+            )
+            return
+
+        data = response.json()
+
+        # pagination support
+        foods = data["results"] if isinstance(data, dict) and "results" in data else data
+
+        if not foods:
+            bot.send_message(
+                message.chat.id,
+                "📭 Hozircha taomlar yo‘q."
+            )
+            return
+
+        for food in foods:
+
+            if food.get("is_booked"):
+                continue
+
+            food_type = (
+                "🔥 Yangi"
+                if food.get("food_type") == "new"
+                else "🍃 Qolgan"
+            )
+
+            price = food.get("price", "Noma'lum")
+
+            caption = (
+                f"🍔 Taom: {food.get('name')}\n"
+                f"📝 {food.get('description', 'Tavsif yo‘q')}\n"
+                f"💰 Narx: {price}\n"
+                f"📌 Turi: {food_type}"
+            )
+
+            markup = types.InlineKeyboardMarkup()
+
+            buy_btn = types.InlineKeyboardButton(
+                "🛍️ Buyurtma qilish",
+                callback_data=f"buy_{food['id']}"
+            )
+
+            markup.add(buy_btn)
+
+            image = food.get("image")
+
+            # Rasm bo‘lsa photo yuboradi
+            if image:
+                try:
+                    bot.send_photo(
+                        message.chat.id,
+                        image,
+                        caption=caption,
+                        reply_markup=markup
+                    )
+                except:
+                    bot.send_message(
+                        message.chat.id,
+                        caption,
+                        reply_markup=markup
+                    )
+            else:
+                bot.send_message(
+                    message.chat.id,
+                    caption,
+                    reply_markup=markup
                 )
-                
-                # Inline tugma (Buyurtma berish uchun)
-                inline_markup = types.InlineKeyboardMarkup()
-                buy_btn = types.InlineKeyboardButton("🛍️ Buyurtma qilish", callback_data=f"buy_{food['id']}_{food['name'][:15]}")
-                inline_markup.add(buy_btn)
-                
-                bot.send_message(message.chat.id, caption, reply_markup=inline_markup)
-        else:
-            bot.send_message(message.chat.id, "Xatolik yuz berdi. API bilan bog'lanib bo'lmadi.")
+
     except Exception as e:
-        bot.send_message(message.chat.id, f"Tizimda texnik xatolik: {str(e)}")
+
+        print(e)
+
+        bot.send_message(
+            message.chat.id,
+            "❌ Serverda xatolik yuz berdi."
+        )
+
+# =========================
+# ABOUT
+# =========================
 
 @bot.message_handler(func=lambda message: message.text == "ℹ️ Loyiha haqida")
 def about_project(message):
-    text = "FoodSave — Oziq-ovqat isrofini (Food Waste) kamaytirish va tadbirkorlar hamda xalq uchun manfaatli platforma yaratish maqsadida ishlab chiqilgan MVP loyihadir."
+
+    text = (
+        "FoodSave — oziq-ovqat isrofini kamaytirishga "
+        "qaratilgan platforma."
+    )
+
     bot.send_message(message.chat.id, text)
 
-# Inline tugma bosilganda (Buyurtma jarayoni boshlanishi)
-@bot.callback_query_handler(func=lambda call: call.data.startswith('buy_'))
+# =========================
+# BUY BUTTON
+# =========================
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("buy_"))
 def handle_buy_callback(call):
-    # call.data dan food_id ni ajratib olish
-    data_parts = call.data.split('_')
-    food_id = int(data_parts[1])
-    food_name = data_parts[2]
-    
+
+    food_id = int(call.data.split("_")[1])
+
     chat_id = call.message.chat.id
+
     user_steps[chat_id] = {
-        'food_id': food_id,
-        'food_name': food_name
+        "food_id": food_id
     }
-    
-    # Ismni so'rash
-    msg = bot.send_message(chat_id, f"✨ {food_name} uchun buyurtma rasmiylashtirilmoqda.\nIltimos, ismingizni kiriting:")
-    bot.register_next_step_handler(msg, process_name_step)
+
+    msg = bot.send_message(
+        chat_id,
+        "👤 Ismingizni kiriting:"
+    )
+
+    bot.register_next_step_handler(
+        msg,
+        process_name_step
+    )
+
+# =========================
+# NAME STEP
+# =========================
 
 def process_name_step(message):
+
     chat_id = message.chat.id
+
     if chat_id not in user_steps:
         return
-        
-    user_steps[chat_id]['client_name'] = message.text
-    
-    # Telefon raqamni so'rash (Tugma orqali yuborish imkoniyati bilan)
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    btn_phone = types.KeyboardButton("📱 Telefon raqamni ulashish", request_contact=True)
+
+    user_steps[chat_id]["client_name"] = message.text
+
+    markup = types.ReplyKeyboardMarkup(
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    btn_phone = types.KeyboardButton(
+        "📱 Telefon yuborish",
+        request_contact=True
+    )
+
     markup.add(btn_phone)
-    
-    msg = bot.send_message(chat_id, "Rahmat! Endi telefon raqamingizni kiriting yoki quyidagi tugma orqali ulashing:", reply_markup=markup)
-    bot.register_next_step_handler(msg, process_phone_step)
+
+    msg = bot.send_message(
+        chat_id,
+        "📞 Telefon raqamingizni yuboring:",
+        reply_markup=markup
+    )
+
+    bot.register_next_step_handler(
+        msg,
+        process_phone_step
+    )
+
+# =========================
+# PHONE STEP
+# =========================
 
 def process_phone_step(message):
+
     chat_id = message.chat.id
+
     if chat_id not in user_steps:
         return
-        
-    # Agar tugma orqali kontakt yuborilgan bo'lsa yoki qo'lda yozilgan bo'lsa
+
     if message.contact:
         phone = message.contact.phone_number
     else:
         phone = message.text
-        
-    user_steps[chat_id]['client_phone'] = phone
-    
-    # Ma'lumotlarni Django API'ga POST so'rov orqali yuborish
+
+    user_steps[chat_id]["client_phone"] = phone
+
     order_data = {
-        "food": user_steps[chat_id]['food_id'],
-        "client_name": user_steps[chat_id]['client_name'],
-        "client_phone": user_steps[chat_id]['client_phone'],
-        "delivery_type": "pickup",     # Standart qiymat
-        "payment_method": "cash",      # Standart qiymat
-        "status": "pending"
+        "food": user_steps[chat_id]["food_id"],
+        "client_name": user_steps[chat_id]["client_name"],
+        "client_phone": phone,
+        "delivery_type": "pickup",
+        "payment_method": "cash"
     }
-    
-    bot.send_message(chat_id, "⏳ Buyurtma tizimga yuborilmoqda...")
-    
+
+    bot.send_message(
+        chat_id,
+        "⏳ Buyurtma yuborilmoqda..."
+    )
+
     try:
-        # Django'dagi reservations endpointiga yuboramiz
-        res = requests.post(f"{API_BASE_URL}/reservations/", json=order_data)
-        
-        # Boshlang'ich tugmalarni qaytarish
-        main_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        main_markup.add(types.KeyboardButton("🛒 Taomlar vitrinasi"), types.KeyboardButton("ℹ️ Loyiha haqida"))
-        
-        if res.status_code == 201 or res.status_code == 200:
+
+        res = requests.post(
+            f"{API_BASE_URL}/reservations/",
+            json=order_data,
+            timeout=15
+        )
+
+        main_markup = types.ReplyKeyboardMarkup(
+            resize_keyboard=True
+        )
+
+        main_markup.add(
+            types.KeyboardButton("🛒 Taomlar vitrinasi"),
+            types.KeyboardButton("ℹ️ Loyiha haqida")
+        )
+
+        if res.status_code in [200, 201]:
+
             bot.send_message(
-                chat_id, 
-                f"🎉 Tabriklaymiz! {user_steps[chat_id]['food_name']} uchun buyurtmangiz muvaffaqiyatli qabul qilindi.\nRestoran tez orada siz bilan bog'lanadi.",
+                chat_id,
+                "✅ Buyurtmangiz qabul qilindi!",
                 reply_markup=main_markup
             )
+
         else:
-            bot.send_message(chat_id, "Xatolik! Buyurtma qabul qilinmadi. API xatosi.", reply_markup=main_markup)
-            
+
+            print(res.text)
+
+            bot.send_message(
+                chat_id,
+                "❌ Buyurtma yuborilmadi.",
+                reply_markup=main_markup
+            )
+
     except Exception as e:
-        bot.send_message(chat_id, f"Xatolik yuz berdi: {str(e)}")
-        
-    # Vaqtinchalik xotirani tozalash
+
+        print(e)
+
+        bot.send_message(
+            chat_id,
+            "❌ Server bilan bog‘lanishda xatolik."
+        )
+
     del user_steps[chat_id]
 
-if __name__ == '__main__':
-    print("Bot ishga tushdi...")
-    bot.infinity_polling()
+# =========================
+# RUN
+# =========================
+
+if __name__ == "__main__":
+
+    print("🤖 Bot ishga tushdi...")
+
+    bot.infinity_polling(
+        skip_pending=True
+    )
